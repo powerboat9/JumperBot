@@ -1,0 +1,382 @@
+local w,h = term.getSize()
+local running = true
+local win = false
+local isColored = false
+if type(term.setBackgroundColor) == "function" then
+isColored = term.isColor()
+end
+local rowSelected = 1
+local fieldWidth = 7
+local WindowWidth = 0
+local fieldStartX = math.floor(w/2)-math.floor(fieldWidth*3/2)+WindowWidth
+local menu = 0
+local menuSelected = 1
+local CurrentPlayer = 1
+if isColored then
+Player1Color = colors.red
+Player1ColorBack = colors.red
+Player2Color = colors.blue
+Player2ColorBack = colors.blue
+else
+Player1Color = colors.black
+Player1ColorBack = colors.white
+Player2Color = colors.black
+Player2ColorBack = colors.white
+end
+local winrot = 0
+local winblau = 0
+local menuWidth = 0
+local Fields = {}
+for i=1,fieldWidth do
+for j=1,6 do
+table.insert(Fields,0)
+end
+end
+local menutisch={
+{text="Smaller",func=function() end},
+{text=tostring(fieldWidth_),func=function() end},
+{text="Wider",func=function() end},
+{text="",func=function() end},
+{text="New",func=function() end},
+{text="Close",func=function() running = false if type(term.setBackgroundColor) == "function" then term.setBackgroundColor(colors.black) term.setTextColor(colors.white) end term.clear() term.setCursorPos(1,1) end},
+}
+menutisch[1].func=function() if menutisch[2].text ~= "4" then menutisch[2].text=tostring(tonumber(menutisch[2].text)-1) end end
+menutisch[3].func=function() menutisch[2].text=tostring(tonumber(menutisch[2].text)+1) end
+menutisch[5].func=function() menu = 0 fieldWidth=tonumber(menutisch[2].text) Fields={} for i=1,fieldWidth do for j=1,6 do table.insert(Fields,0) end end CurrentPlayer = 1 win = false fieldStartX = math.floor(w/2)-math.floor(fieldWidth*3/2) end
+for i=1,table.getn(menutisch) do
+if string.len(menutisch[i].text) > menuWidth then
+menuWidth = tonumber(string.len(menutisch[i].text))
+end
+end
+menuWidth = tonumber(menuWidth+2)
+function design()
+if type(term.setBackgroundColor) == "function" then
+if isColored then
+term.setBackgroundColor(colors.lightGray)
+term.setTextColor(colors.white)
+else
+term.setBackgroundColor(colors.black)
+term.setTextColor(colors.white)
+end
+end
+term.setCursorPos(1+WindowWidth,1)
+write(string.rep(" ",w))
+term.setCursorPos(1+WindowWidth,2)
+write(string.rep(" ",w))
+term.setCursorPos(1+WindowWidth,3)
+write(string.rep(" ",w))
+term.setCursorPos(2+WindowWidth,2)
+write"= Connect-4"
+if isColored then
+term.setTextColor(colors.red)
+end
+term.write(" "..winrot)
+if isColored then
+term.setTextColor(colors.gray)
+end
+term.write("/")
+if isColored then
+term.setTextColor(colors.blue)
+end
+term.write(""..winblau)
+if type(term.setBackgroundColor) == "function" then
+term.setBackgroundColor(colors.white)
+end
+for i=4,h do
+term.setCursorPos(1+WindowWidth,i)
+term.write(string.rep(" ",w-WindowWidth))
+end
+if type(term.setBackgroundColor) == "function" then
+if isColored then
+term.setBackgroundColor(colors.gray)
+else
+term.setBackgroundColor(colors.black)
+end
+end
+for i=1,14 do
+term.setCursorPos(fieldStartX-1+WindowWidth,math.floor(h/2)-5+i)
+term.write(string.rep(" ",(fieldWidth*3)+1))
+end
+term.setCursorPos(fieldStartX+WindowWidth,5)
+if type(term.setBackgroundColor) == "function" then
+term.setTextColor(colors.white)
+end
+for i=1,fieldWidth do
+if (rowSelected == i and isColored == false and menu == 0) or isColored == true then
+term.write("vv ")
+else
+term.write("-- ")
+end
+end
+if type(term.setBackgroundColor) == "function" then
+if isColored then
+term.setBackgroundColor(colors.lightGray)
+else
+term.setBackgroundColor(colors.white)
+end
+end
+end
+function drawFields()
+local curField=0
+local fieldStartX_=fieldStartX
+for i=1,fieldWidth do
+for j=1,6 do
+DrawPlayer(curField+j,fieldStartX_+WindowWidth,18-(j*2))
+end
+fieldStartX_=fieldStartX_+3
+curField=curField+6
+end
+end
+function DrawPlayer(number,x,y)
+if tonumber(number) <= #Fields then
+if type(term.setBackgroundColor) == "function" then
+if Fields[number] == 1 then
+term.setBackgroundColor(Player1ColorBack)
+term.setTextColor(Player1Color)
+elseif Fields[number] == 2 then
+term.setBackgroundColor(Player2ColorBack)
+term.setTextColor(Player2Color)
+else
+term.setBackgroundColor(colors.lightGray)
+end
+end
+term.setCursorPos(tonumber(x),tonumber(y))
+if Fields[number] == 1 and isColored == false then
+term.write("rr")
+elseif Fields[number] == 2 and isColored == false then
+term.write("bb")
+else
+term.write("  ")
+end
+term.setCursorPos(tonumber(x),tonumber(y)+1)
+if Fields[number] == 1 and isColored == false then
+term.write("rr")
+elseif Fields[number] == 2 and isColored == false then
+term.write("bb")
+else
+term.write("  ")
+end
+end
+end
+function SetPlayer(number)
+if tonumber(number) <= #Fields then
+Fields[tonumber(number)] = CurrentPlayer
+CurrentPlayer = CurrentPlayer+1
+if CurrentPlayer == 3 then
+CurrentPlayer = 1
+end
+end
+end
+local function checkForWin(a,b,c,d)
+if win == false then
+if tonumber(Fields[a]..Fields[b]..Fields[c]..Fields[d]) == 1111 then
+CurrentPlayer = 2
+win = true
+winrot = winrot + 1
+design()
+drawFields()
+elseif tonumber(Fields[a]..Fields[b]..Fields[c]..Fields[d]) == 2222 then
+CurrentPlayer = 1
+win = true
+winblau = winblau + 1
+design()
+drawFields()
+end
+end
+end
+local function checkWins()
+term.setBackgroundColor(colors.black)
+term.setTextColor(colors.white)
+term.setCursorPos(1,1)
+for i=1,fieldWidth do -- (|) -- finished
+if Fields[(((i-1)*6)+1)] ~= nil and Fields[(((i-1)*6)+4)] ~= nil then
+checkForWin((((i-1)*6)+1),(((i-1)*6)+2),(((i-1)*6)+3),(((i-1)*6)+4))
+end
+if Fields[(((i-1)*6)+2)] ~= nil and Fields[(((i-1)*6)+5)] ~= nil then
+checkForWin((((i-1)*6)+2),(((i-1)*6)+3),(((i-1)*6)+4),(((i-1)*6)+5))
+end
+if Fields[(((i-1)*6)+3)] ~= nil and Fields[(((i-1)*6)+6)] ~= nil then
+checkForWin((((i-1)*6)+3),(((i-1)*6)+4),(((i-1)*6)+5),(((i-1)*6)+6))
+end
+end
+for i=0,fieldWidth-1 do -- (-) -- finished
+for j=1,6 do
+if Fields[(i*6)+j+18] ~= nil then
+checkForWin((i*6)+j,(i*6)+j+6,(i*6)+j+12,(i*6)+j+18)
+end
+end
+end
+for i=0,fieldWidth-1 do -- (/) -- finished
+for j=1,4 do
+if Fields[(i*6)+j+21] ~= nil then
+checkForWin((i*6)+j,(i*6)+j+7,(i*6)+j+14,(i*6)+j+21)
+end
+end
+end
+for i=0,fieldWidth-1 do -- (\) -- finished
+for j=1,4 do
+if Fields[(i*6)+22-j] ~= nil then
+checkForWin((i*6)+7-j,(i*6)+12-j,(i*6)+17-j,(i*6)+22-j)
+end
+end
+end
+end
+function drawMenu()
+if type(term.setBackgroundColor) == "function" then
+term.setTextColor(colors.white)
+if isColored then
+term.setBackgroundColor(colors.gray)
+else
+term.setBackgroundColor(colors.black)
+end
+end
+for i = 1,h+1 do
+term.setCursorPos(1,i)
+write(string.rep(" ",menuWidth))
+end
+for k=1,table.getn(menutisch) do
+term.setCursorPos(2,k+1)
+term.write(menutisch[k].text)
+if k == menuSelected and isColored == false then
+term.setCursorPos(1,k+1)
+term.write("-")
+end
+end
+end
+function addPlayer(column)
+if Fields[(column-1)*6+1] ~= nil then
+if Fields[(column-1)*6+6] ~= 0 then
+elseif Fields[(column-1)*6+5] ~= 0 then
+SetPlayer((column-1)*6+6)
+elseif Fields[(column-1)*6+4] ~= 0 then
+SetPlayer((column-1)*6+5)
+elseif Fields[(column-1)*6+3] ~= 0 then
+SetPlayer((column-1)*6+4)
+elseif Fields[(column-1)*6+2] ~= 0 then
+SetPlayer((column-1)*6+3)
+elseif Fields[(column-1)*6+1] ~= 0 then
+SetPlayer((column-1)*6+2)
+elseif Fields[(column-1)*6+1] == 0 then
+SetPlayer((column-1)*6+1)
+end
+end
+drawFields()
+checkWins()
+end
+function click()
+while running do
+e,d,x,y = os.pullEvent()
+if e == "mouse_click" then
+ if x == 2 and y == 2 and menu == 0 then
+ menu = 1
+ menutisch[2].text=tostring(fieldWidth)
+ fieldWidth_=fieldWidth
+ for i = 1,menuWidth do
+ WindowWidth = WindowWidth + 1
+ drawMenu()
+ design()
+ drawFields()
+ sleep(0)
+ end
+ elseif x >= menuWidth+1 and x <= h and menu == 1 then
+ menu = 0
+ for i = 1,menuWidth do
+ WindowWidth = WindowWidth - 1
+ drawMenu()
+ design()
+ drawFields()
+ sleep(0)
+ end
+ elseif x >= fieldStartX and x <= fieldStartX+(fieldWidth*3)-2 and y == 5 and menu == 0 and win == false then
+ local curX=fieldStartX
+ for i=1,fieldWidth do
+ if x >= curX and x <= curX+1 then
+ addPlayer(i)
+ break
+ else
+ curX=curX+3
+ end
+ end
+ elseif menu == 1 and x >=1 and x <= menuWidth then
+    if menutisch[y-1] ~= nil then
+    menutisch[y-1].func()
+    if running == true then
+    if menu == 0 then
+    for i = 1,menuWidth do
+    WindowWidth = WindowWidth - 1
+    drawMenu()
+    design()
+    drawFields()
+    sleep(0)
+    end
+    else
+    drawMenu()
+    end
+    end
+    end
+ end
+ elseif e == "key" and isColored == false then
+ if menu == 1 and d == 200 and menuSelected > 1 then
+ menuSelected = menuSelected - 1
+ drawMenu()
+ elseif menu == 1 and d == 208 and menuSelected < #menutisch then
+ menuSelected = menuSelected + 1
+ drawMenu()
+ elseif menu == 0 and d == 15 then
+ menu = 1
+ menutisch[2].text=tostring(fieldWidth)
+ fieldWidth_=fieldWidth
+ for i = 1,menuWidth do
+ WindowWidth = WindowWidth + 1
+ drawMenu()
+ design()
+ drawFields()
+ sleep(0)
+ end
+ elseif menu == 1 and d == 15 then
+ menu = 0
+ for i = 1,menuWidth do
+ WindowWidth = WindowWidth - 1
+ drawMenu()
+ design()
+ drawFields()
+ sleep(0)
+ end
+ elseif menu == 1 and d == 28 and menutisch[menuSelected] ~= nil then
+ menutisch[menuSelected].func()
+ if running == true then
+    if menu == 0 then
+    for i = 1,menuWidth do
+    WindowWidth = WindowWidth - 1
+    drawMenu()
+    design()
+    drawFields()
+    sleep(0)
+    end
+    else
+    drawMenu()
+    end
+  end
+  elseif menu == 0 and win == false then
+  if d == keys.enter then
+  addPlayer(rowSelected)
+  elseif d == keys.left and rowSelected > 1 then
+  rowSelected = rowSelected - 1
+  design()
+  drawFields()
+  elseif d == keys.right and rowSelected < fieldWidth then
+  rowSelected = rowSelected + 1
+  design()
+  drawFields()
+  end
+ end
+ elseif e == "term_resize" then
+    drawMenu()
+    design()
+    drawFields()
+ end
+end
+end
+design()
+drawFields()
+click()

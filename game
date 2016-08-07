@@ -1,0 +1,102 @@
+local grassSize = 3
+local gaps = {}
+local player = {5, 0}
+local score = 0
+local width, height = term.getSize()
+local grass = term.isColor() and "5" or "0"
+local playerColor = term.isColor() and "b" or "8"
+local isJumping = false
+local jumpHeight = 4
+local speed = 0.2
+local frequency = 0.2
+local minSpace = 3
+local maxGap = jumpHeight * 2 - 2
+
+local function wait()
+    local t = os.startTimer(speed)
+    local e = {false}
+    while true do
+        tE = {os.pullEvent()}
+        if tE[1] == "timer" and tE[2] == t then
+            break
+        else
+            e[1] = true
+            e[#e + 1] = tE
+        end
+    end
+    return e
+end
+
+local function willFall(x)
+    x = x or player[1]
+    for i = 1, #gaps do
+        local dist = gaps[i].pos - x
+        local size = gaps[i].size
+        if (dist <= 0) and ((dist + size) > 0) then
+            return true
+        end
+    end
+    return false
+end
+
+local function die()
+    sleep(speed * 5)
+    gaps = {}
+    player[2] = 0
+    isJumping = false
+    score = 0
+end
+
+term.setBackgroundColor(colors.black)
+while true do
+    term.clear()
+    term.setCursorPos(1, 1)
+    term.write(score .. ":" .. #gaps .. (gaps[1] and (":" .. (gaps[1].pos - player[1])) or ""))
+    local str = ""
+    for i = 1, width do
+        str = str .. (willFall(i) and "f" or grass)
+    end
+    for i = 1, grassSize do
+        term.setCursorPos(1, height - (grassSize - 1) + (i - 1))
+        term.blit((" "):rep(width), str, str)
+    end
+    term.setCursorPos(player[1], height - grassSize - player[2])
+    term.blit(" ", playerColor, playerColor)
+    local e = wait()
+    if willFall() then
+        die()
+    end
+    local newGaps = {}
+    for i = 1, #gaps do
+        gaps[i].pos = gaps[i].pos + 1
+        if (gaps[i].pos - player[2] + (gaps[i].size - 1)) > 0 then
+            newGaps[#newGaps + 1] = gaps[i]
+        end
+    end
+    gaps = newGaps
+    if isJumping then
+        if player[2] == jumpHeight then
+            isJumping = false
+        else
+            player[2] = player[2] + 1
+        end
+    end
+    if not isJumping and player[2] > 0 then
+        player[2] = player[2] - 1
+    end
+    if math.random() < frequency then
+        if (#gaps == 0) or ((gaps[#gaps].pos + gaps[#gaps].size - 1) < (width - minSpace)) then
+            gaps[#gaps + 1] = {pos = width, size = math.random(1, maxGap)}
+        end
+    end
+    if e[1] then
+        for i = 2, #e do
+            if e[i][1] == "key" and e[i][2] == keys.up then
+                if player[2] == 0 then
+                    isJumping = true
+                end
+            end
+        end
+    end
+    score = score + 1
+end

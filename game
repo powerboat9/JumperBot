@@ -66,13 +66,13 @@ while true do
         player[2] = player[2] - 1
     end
     if math.random() < frequency and genSpace == 0 and hasSpace >= minSpace then
-        genSize = math.random(1, maxGap)
+        genLeft = math.random(1, maxGap)
         hasSpace = 0
     end
     table.remove(gaps, 1)
-    if genSize > 0 then
+    if genLeft > 0 then
         gaps[width] = true
-        genSize = genSize - 1
+        genLeft = genSize - 1
     else
         gaps[width] = false
         hasSpace = hasSpace + 1
